@@ -5,9 +5,10 @@ import { uploadAPI, customerAPI } from '../services/api';
 const AUTO_SAVE_KEY = 'wv_upload_draft';
 
 const DATA_TYPES = [
-  { value: 'SYSTEM',   label: 'Solar System Data (Estimated vs Actual)' },
-  { value: 'UTILITY',  label: 'Utility Meter Data (15-min intervals)' },
-  { value: 'CLEANING', label: 'Cleaning Data Comparison (Before / After)' },
+  { value: 'SOLAR_ACTUAL',    label: 'Solar Data – Actual Production' },
+  { value: 'SOLAR_ESTIMATED', label: 'Solar Data – Estimated Production' },
+  { value: 'UTILITY',         label: 'Utility Meter Data (15-min intervals)' },
+  { value: 'CLEANING',        label: 'Cleaning Data Comparison (Before / After)' },
 ];
 
 export default function UploadPage() {
@@ -86,9 +87,11 @@ export default function UploadPage() {
       let uploadFile = file;
 
       if (dataType === 'UTILITY') {
-        uploadFn = uploadAPI.uploadUtility;
-      } else {
-        uploadFn = uploadAPI.uploadExcel;
+  uploadFn = uploadAPI.uploadUtility;
+} else if (dataType === 'SOLAR_ACTUAL' || dataType === 'SOLAR_ESTIMATED') {
+  uploadFn = (f, id) => uploadAPI.uploadExcel(f, id, dataType);
+} else {
+  uploadFn = uploadAPI.uploadExcel;
         if (dataType === 'CLEANING') {
           // Prefix filename with the cleaning tag so the upload history
           // and analytics can distinguish before/after datasets.
@@ -119,30 +122,46 @@ export default function UploadPage() {
   };
 
   const getColumnHint = () => {
-    if (dataType === 'UTILITY') {
-      return (
-        <>
-          <b>Expected columns:</b> Timestamp | kWh<br />
-          Negative kWh values indicate energy exported to the grid (solar export).
-        </>
-      );
-    }
-    if (dataType === 'CLEANING') {
-      return (
-        <>
-          <b>Expected columns:</b> Date | Actual kWh<br />
-          Upload one dataset tagged <b>Before Cleaning</b> and another tagged <b>After Cleaning</b>.
-          The platform will compare them automatically in the Comparison module.
-        </>
-      );
-    }
+  if (dataType === 'UTILITY') {
     return (
       <>
-        <b>Expected columns:</b> Month/Date | Estimated kWh | Actual kWh<br />
-        First row is treated as headers.
+        <b>Expected columns:</b> Timestamp | kWh<br />
+        Negative kWh values indicate energy exported to the grid (solar export).
       </>
     );
-  };
+  }
+  if (dataType === 'CLEANING') {
+    return (
+      <>
+        <b>Expected columns:</b> Date | Actual kWh<br />
+        Upload one dataset tagged <b>Before Cleaning</b> and another tagged <b>After Cleaning</b>.
+        The platform will compare them automatically in the Comparison module.
+      </>
+    );
+  }
+  if (dataType === 'SOLAR_ACTUAL') {
+    return (
+      <>
+        <b>Expected columns:</b> Date | Actual kWh<br />
+        Upload your actual solar production data. First row is treated as headers.
+      </>
+    );
+  }
+  if (dataType === 'SOLAR_ESTIMATED') {
+    return (
+      <>
+        <b>Expected columns:</b> Date | Estimated kWh<br />
+        Upload your estimated/predicted solar production data. First row is treated as headers.
+      </>
+    );
+  }
+  return (
+    <>
+      <b>Expected columns:</b> Month/Date | Estimated kWh | Actual kWh<br />
+      First row is treated as headers.
+    </>
+  );
+};
 
   return (
     <ProtectedRoute title="Upload Data" subtitle="Upload solar, utility, or cleaning data files">
