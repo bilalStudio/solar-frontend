@@ -14,8 +14,8 @@ const DATA_TYPES = [
 export default function UploadPage() {
   const [customers, setCustomers] = useState([]);
   const [customerId, setCustomerId] = useState('');
-  const [dataType, setDataType] = useState('SYSTEM');
-  const [cleaningTag, setCleaningTag] = useState('BEFORE'); // BEFORE | AFTER
+  const [dataType, setDataType] = useState('SOLAR_ACTUAL');
+  const [cleaningTag, setCleaningTag] = useState('BEFORE');
   const [file, setFile] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -81,31 +81,23 @@ export default function UploadPage() {
     setProgress(10);
 
     try {
-      // Cleaning Data Comparison uses the SYSTEM upload endpoint
-      // but is tagged via the filename so backend / display can identify it
-      let uploadFn;
       let uploadFile = file;
+      let effectiveDataType = dataType;
 
-      if (dataType === 'UTILITY') {
-  uploadFn = uploadAPI.uploadUtility;
-} else if (dataType === 'SOLAR_ACTUAL' || dataType === 'SOLAR_ESTIMATED') {
-  uploadFn = (f, id) => uploadAPI.uploadExcel(f, id, dataType);
-} else {
-  uploadFn = uploadAPI.uploadExcel;
-        if (dataType === 'CLEANING') {
-          // Prefix filename with the cleaning tag so the upload history
-          // and analytics can distinguish before/after datasets.
-          const tag = cleaningTag === 'BEFORE' ? 'cleaning-before' : 'cleaning-after';
-          const renamed = new File([file], `${tag}__${file.name}`, { type: file.type });
-          uploadFile = renamed;
-        }
+      if (dataType === 'CLEANING') {
+        // Send CLEANING_BEFORE or CLEANING_AFTER to backend
+        effectiveDataType = cleaningTag === 'BEFORE' ? 'CLEANING_BEFORE' : 'CLEANING_AFTER';
+        // Also prefix filename for history display
+        const tag = cleaningTag === 'BEFORE' ? 'cleaning-before' : 'cleaning-after';
+        uploadFile = new File([file], `${tag}__${file.name}`, { type: file.type });
       }
 
       const progressTimer = setInterval(() => {
         setProgress((p) => Math.min(85, p + 15));
       }, 300);
 
-      const res = await uploadFn(uploadFile, customerId);
+      const res = await uploadAPI.uploadExcel(uploadFile, customerId, effectiveDataType);
+
       clearInterval(progressTimer);
       setProgress(100);
       setResult({
@@ -122,46 +114,46 @@ export default function UploadPage() {
   };
 
   const getColumnHint = () => {
-  if (dataType === 'UTILITY') {
+    if (dataType === 'UTILITY') {
+      return (
+        <>
+          <b>Expected columns:</b> Timestamp | kWh<br />
+          Negative kWh values indicate energy exported to the grid (solar export).
+        </>
+      );
+    }
+    if (dataType === 'CLEANING') {
+      return (
+        <>
+          <b>Expected columns:</b> Date | Actual kWh<br />
+          Upload one dataset tagged <b>Before Cleaning</b> and another tagged <b>After Cleaning</b>.
+          The platform will compare them automatically in the Comparison module.
+        </>
+      );
+    }
+    if (dataType === 'SOLAR_ACTUAL') {
+      return (
+        <>
+          <b>Expected columns:</b> Date | Actual kWh<br />
+          Upload your actual solar production data. First row is treated as headers.
+        </>
+      );
+    }
+    if (dataType === 'SOLAR_ESTIMATED') {
+      return (
+        <>
+          <b>Expected columns:</b> Date | Estimated kWh<br />
+          Upload your estimated/predicted solar production data. First row is treated as headers.
+        </>
+      );
+    }
     return (
       <>
-        <b>Expected columns:</b> Timestamp | kWh<br />
-        Negative kWh values indicate energy exported to the grid (solar export).
+        <b>Expected columns:</b> Month/Date | Estimated kWh | Actual kWh<br />
+        First row is treated as headers.
       </>
     );
-  }
-  if (dataType === 'CLEANING') {
-    return (
-      <>
-        <b>Expected columns:</b> Date | Actual kWh<br />
-        Upload one dataset tagged <b>Before Cleaning</b> and another tagged <b>After Cleaning</b>.
-        The platform will compare them automatically in the Comparison module.
-      </>
-    );
-  }
-  if (dataType === 'SOLAR_ACTUAL') {
-    return (
-      <>
-        <b>Expected columns:</b> Date | Actual kWh<br />
-        Upload your actual solar production data. First row is treated as headers.
-      </>
-    );
-  }
-  if (dataType === 'SOLAR_ESTIMATED') {
-    return (
-      <>
-        <b>Expected columns:</b> Date | Estimated kWh<br />
-        Upload your estimated/predicted solar production data. First row is treated as headers.
-      </>
-    );
-  }
-  return (
-    <>
-      <b>Expected columns:</b> Month/Date | Estimated kWh | Actual kWh<br />
-      First row is treated as headers.
-    </>
-  );
-};
+  };
 
   return (
     <ProtectedRoute title="Upload Data" subtitle="Upload solar, utility, or cleaning data files">
@@ -313,11 +305,12 @@ export default function UploadPage() {
               </thead>
               <tbody>
                 {history.map((u) => {
-                  // Decode the cleaning tag from the filename prefix
                   const fname = u.originalFilename || '';
-                  let typeLabel = u.dataType || 'SYSTEM';
+                  let typeLabel = u.dataType || 'SOLAR_ACTUAL';
                   if (fname.startsWith('cleaning-before__')) typeLabel = 'CLEANING (Before)';
                   else if (fname.startsWith('cleaning-after__')) typeLabel = 'CLEANING (After)';
+                  else if (typeLabel === 'SOLAR_ACTUAL') typeLabel = 'Solar – Actual';
+                  else if (typeLabel === 'SOLAR_ESTIMATED') typeLabel = 'Solar – Estimated';
                   return (
                     <tr key={u.id}>
                       <td style={{ fontSize: 13 }}>{fname.replace(/^cleaning-(before|after)__/, '')}</td>
