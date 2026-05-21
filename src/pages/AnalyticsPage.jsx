@@ -6,10 +6,13 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer,
 } from 'recharts';
-
+import { useSearchParams } from 'react-router-dom';
 export default function AnalyticsPage() {
+  const [searchParams] = useSearchParams();
   const [customers, setCustomers] = useState([]);
-  const [customerId, setCustomerId] = useState('');
+  const [customerId, setCustomerId] = useState(
+  searchParams.get('customerId') || ''
+);
   const [roi, setRoi] = useState(null);
   const [variance, setVariance] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -18,7 +21,11 @@ export default function AnalyticsPage() {
   useEffect(() => {
     customerAPI.getAll().then((r) => setCustomers(r.data?.data || [])).catch(() => {});
   }, []);
-
+useEffect(() => {
+  if (customerId) {
+    loadAnalytics();
+  }
+}, [customerId]);
   const loadAnalytics = async () => {
     if (!customerId) {
       setError('Please select a customer.');

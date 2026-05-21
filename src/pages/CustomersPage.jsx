@@ -4,7 +4,7 @@ import CustomerModal from '../components/CustomerModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { customerAPI } from '../services/api';
 import { DEMO_CUSTOMERS } from '../data/demoData';
-
+import { useNavigate } from 'react-router-dom';
 // ─── Status config ─────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   active:   { label: 'Active',   className: 'badge-success', dot: '#54A877' },
@@ -178,6 +178,7 @@ function EmptyState({ hasFilters, onAdd }) {
 
 // ─── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function CustomersPage() {
+  const navigate = useNavigate();
   const [customers, setCustomers]         = useState([]);
   const [filtered, setFiltered]           = useState([]);
   const [loading, setLoading]             = useState(true);
@@ -299,11 +300,9 @@ export default function CustomersPage() {
     }
   };
 
-  const handleView = (customer) => {
-    // Navigate to analytics page for this customer
-    // For now show a toast — analytics page will be Module 5
-    showToast(`Analytics for ${customer.name} — coming in Module 5!`, 'info');
-  };
+const handleView = (customer) => {
+  navigate(`/analytics?customerId=${customer.id}`);
+};
 
   // ── Computed stats ───────────────────────────────────────────────────────────
   const stats = {
