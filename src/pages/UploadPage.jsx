@@ -54,9 +54,12 @@ export default function UploadPage() {
 
   const handleFileSelect = (selectedFile) => {
     if (!selectedFile) return;
+    // Explicit type check for mobile browsers that ignore accept attribute
     const name = selectedFile.name.toLowerCase();
-    if (!name.endsWith('.xlsx') && !name.endsWith('.xlsm') && !name.endsWith('.csv')) {
-      setError('Only .xlsx, .xlsm, and .csv files are supported.');
+    const validTypes = [".xlsx", ".xlsm", ".csv"];
+    const isValid = validTypes.some((ext) => name.endsWith(ext));
+    if (!isValid) {
+      setError(`File type not supported. Please upload a .csv, .xlsx, or .xlsm file. You uploaded: "${selectedFile.name}"`);
       return;
     }
     setFile(selectedFile);
