@@ -1,28 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '../components/ToastContext';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { reportAPI, customerAPI } from '../services/api';
 
-function Toast({ message, type, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4000);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  return (
-    <div style={{
-      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
-      background: type === 'success' ? '#1f8a4f' : '#dc2626',
-      color: '#fff', padding: '12px 20px', borderRadius: 10,
-      fontSize: 14, fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-      display: 'flex', alignItems: 'center', gap: 10, maxWidth: 340,
-    }}>
-      <span>{type === 'success' ? '✓' : '✕'}</span>
-      <span>{message}</span>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16, marginLeft: 'auto' }}>×</button>
-    </div>
-  );
-}
-
 export default function ReportsPage() {
+  const toast = useToast();
   const [reports, setReports] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState('');
@@ -32,10 +14,7 @@ export default function ReportsPage() {
   const [emailForm, setEmailForm] = useState({ toEmail: '', cc: '', subject: '', body: '' });
   const [sending, setSending] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = 'success') => setToast({ message, type });
-  const hideToast = () => setToast(null);
 
   useEffect(() => {
     customerAPI.getAll().then((r) => setCustomers(r.data?.data || [])).catch(() => {});
@@ -78,11 +57,11 @@ export default function ReportsPage() {
         const dlRes = await reportAPI.download(reportId);
         const title = genRes.data?.data?.reportTitle || 'report';
         triggerDownload(dlRes.data, `${title}.pdf`);
-        showToast('Report downloaded successfully!');
+        toast.success('Report downloaded!');
       }
       await loadReports();
     } catch (err) {
-      showToast('Failed: ' + (err.response?.data?.message || err.message), 'error');
+      toast.error(err.response?.data?.message || err.message, 'Failed');
     } finally {
       setGenerating(false);
     }
@@ -92,7 +71,7 @@ export default function ReportsPage() {
     try {
       const res = await reportAPI.download(report.id);
       triggerDownload(res.data, (report.reportTitle || 'report') + '.pdf');
-      showToast('Report downloaded!');
+      toast.success('Report downloaded!');
     } catch (err) {
       showToast('Download failed: ' + (err.response?.data?.message || err.message), 'error');
     }
@@ -102,18 +81,18 @@ export default function ReportsPage() {
     try {
       const res = await reportAPI.exportExcel(customerId);
       triggerDownload(res.data, `performance-${customerId}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      showToast('Excel exported successfully!');
+      toast.success('Excel exported successfully!');
     } catch (err) {
       showToast('Export failed: ' + (err.response?.data?.message || err.message), 'error');
     }
   };
 
   const handleDelete = async (report) => {
-    if (!window.confirm('Delete this report?')) return;
+    
     try {
       await reportAPI.delete(report.id);
       setReports(reports.filter((r) => r.id !== report.id));
-      showToast('Report deleted.');
+      
     } catch (err) {
       showToast('Delete failed: ' + (err.response?.data?.message || err.message), 'error');
     }
@@ -137,7 +116,7 @@ export default function ReportsPage() {
     setSending(true);
     try {
       await reportAPI.email(emailModal.id, emailForm);
-      showToast('Email sent successfully!');
+      
       setEmailModal(null);
       await loadReports();
     } catch (err) {
@@ -261,7 +240,6 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       </div>
     </ProtectedRoute>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { customerAPI, analyticsAPI, reportAPI } from '../services/api';
+import { useToast } from '../components/ToastContext';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const COMPARISON_TYPES = [
@@ -9,26 +10,6 @@ const COMPARISON_TYPES = [
   { id: 'before_after_cleaning', label: 'Before vs After Cleaning' },
   { id: 'loss_calculation',      label: 'Loss Calculation' },
 ];
-
-function Toast({ message, type, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4000);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  return (
-    <div style={{
-      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
-      background: type === 'success' ? '#1f8a4f' : '#dc2626',
-      color: '#fff', padding: '12px 20px', borderRadius: 10,
-      fontSize: 14, fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-      display: 'flex', alignItems: 'center', gap: 10, maxWidth: 340,
-    }}>
-      <span>{type === 'success' ? '✓' : '✕'}</span>
-      <span>{message}</span>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16, marginLeft: 'auto' }}>×</button>
-    </div>
-  );
-}
 
 const triggerDownload = (blobData, filename) => {
   const url = window.URL.createObjectURL(new Blob([blobData], { type: 'application/pdf' }));
@@ -45,8 +26,8 @@ export default function ComparisonPage() {
   const [customers, setCustomers] = useState([]);
   const [customerId, setCustomerId] = useState('');
   const [type, setType] = useState('estimated_vs_actual');
-  const [toast, setToast] = useState(null);
-  const showToast = (message, t = 'success') => setToast({ message, type: t });
+  const toast = useToast();
+  const showToast = (message, t = 'success') => t === 'success' ? toast.success(message) : toast.error(message);
 
   useEffect(() => {
     customerAPI.getAll().then((r) => setCustomers(r.data?.data || [])).catch(() => {});
@@ -95,7 +76,6 @@ export default function ComparisonPage() {
           )}
         </div>
       </div>
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </ProtectedRoute>
   );
 }

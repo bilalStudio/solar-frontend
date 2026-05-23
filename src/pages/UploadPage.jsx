@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { uploadAPI, customerAPI } from '../services/api';
+import { useToast } from '../components/ToastContext';
 
 const AUTO_SAVE_KEY = 'wv_upload_draft';
 
