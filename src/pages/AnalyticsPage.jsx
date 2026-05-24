@@ -52,7 +52,7 @@ export default function AnalyticsPage() {
               <StatCard label="Total Estimated" value={`${roi.totalEstimatedKwh || 0} kWh`} color="#345EA6" />
               <StatCard label="Variance" value={`${roi.totalVarianceKwh || 0} kWh`} color="#7c3aed" />
               <StatCard label="Performance" value={`${roi.performancePct || 0}%`} color="#54A877" />
-              <StatCard label="Actual Savings" value={`PKR ${roi.actualSavingsPKR || 0}`} color="#54A877" />
+              <StatCard label="Actual Savings" value={`USD ${roi.actualSavingsPKR || 0}`} color="#54A877" />
             </div>
             {variance.length > 0 && (
               <>

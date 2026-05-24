@@ -238,7 +238,7 @@ export default function CustomerModal({ customer, onSave, onClose, saving }) {
                 ref={firstInputRef}
                 value={form.name}
                 onChange={set('name')}
-                placeholder="Ali Hassan"
+                placeholder="Enter full name"
                 style={errors.name ? { borderColor: '#E65428' } : {}}
               />
             </Field>
@@ -247,7 +247,7 @@ export default function CustomerModal({ customer, onSave, onClose, saving }) {
                 type="email"
                 value={form.email}
                 onChange={set('email')}
-                placeholder="ali@example.com"
+                placeholder="Enter email address"
                 style={errors.email ? { borderColor: '#E65428' } : {}}
               />
             </Field>
@@ -260,14 +260,14 @@ export default function CustomerModal({ customer, onSave, onClose, saving }) {
                 type="tel"
                 value={form.phone}
                 onChange={set('phone')}
-                placeholder="0300-1234567"
+                placeholder="Enter phone number"
               />
             </Field>
             <Field label="City">
               <StyledInput
                 value={form.city}
                 onChange={set('city')}
-                placeholder="Lahore"
+                placeholder="Enter city"
               />
             </Field>
           </div>
@@ -277,7 +277,7 @@ export default function CustomerModal({ customer, onSave, onClose, saving }) {
             <StyledInput
               value={form.address}
               onChange={set('address')}
-              placeholder="House #, Street, Area"
+              placeholder="Enter street address"
             />
           </Field>
 
@@ -288,7 +288,7 @@ export default function CustomerModal({ customer, onSave, onClose, saving }) {
                 type="number"
                 value={form.systemSizeKw}
                 onChange={set('systemSizeKw')}
-                placeholder="5.5"
+                placeholder="Enter system size (kW)"
                 style={errors.systemSizeKw ? { borderColor: '#E65428' } : {}}
               />
             </Field>

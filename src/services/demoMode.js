@@ -306,7 +306,7 @@ export function handleDemoRequest(config) {
       electricityRatePKR: rate,
       estimatedCostImpactPKR: Math.round(loss * rate * 100) / 100,
       performancePct: 15.0,
-      customerSummary: `Dear ${customer.name},\n\nDuring the period ${body.startDate} to ${body.endDate}, our analysis shows your solar system underperformed by approximately ${Math.round(loss * 100) / 100} kWh, equivalent to PKR ${Math.round(loss * rate * 100) / 100} in lost savings.\n\nWe recommend a follow-up inspection to identify the cause.\n\nRegards,\nWattVue Team`,
+      customerSummary: `Dear ${customer.name},\n\nDuring the period ${body.startDate} to ${body.endDate}, our analysis shows your solar system underperformed by approximately ${Math.round(loss * 100) / 100} kWh, equivalent to USD ${Math.round(loss * rate * 100) / 100} in lost savings.\n\nWe recommend a follow-up inspection to identify the cause.\n\nRegards,\nWattVue Team`,
     }, 'Loss calculation complete'));
   }
 
