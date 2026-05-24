@@ -3,8 +3,10 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import CustomerModal from '../components/CustomerModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { customerAPI } from '../services/api';
+import { useToast } from '../components/ToastContext';
+import DataTable from '../components/DataTable';
 import { DEMO_CUSTOMERS } from '../data/demoData';
-import { useNavigate } from 'react-router-dom';
+
 // ─── Status config ─────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   active:   { label: 'Active',   className: 'badge-success', dot: '#54A877' },
@@ -178,7 +180,7 @@ function EmptyState({ hasFilters, onAdd }) {
 
 // ─── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function CustomersPage() {
-  const navigate = useNavigate();
+  const toast = useToast();
   const [customers, setCustomers]         = useState([]);
   const [filtered, setFiltered]           = useState([]);
   const [loading, setLoading]             = useState(true);
@@ -189,7 +191,7 @@ export default function CustomersPage() {
   const [editCustomer, setEditCustomer]   = useState(null);
   const [deleteCustomer, setDeleteCustomer] = useState(null);
   const [saving, setSaving]               = useState(false);
-  const [toast, setToast]                 = useState(null);
+
   const [isDemoMode, setIsDemoMode]       = useState(false);
 
   // ── Load customers from API ──────────────────────────────────────────────────
@@ -238,10 +240,6 @@ export default function CustomersPage() {
   }, [customers, searchQuery, activeTab]);
 
   // ── Toast helper ─────────────────────────────────────────────────────────────
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
 
   // ── CRUD handlers ─────────────────────────────────────────────────────────────
   const handleSave = async (formData, isEdit) => {
@@ -253,20 +251,20 @@ export default function CustomersPage() {
           setCustomers(prev => prev.map(c =>
             c.id === editCustomer.id ? { ...c, ...formData } : c
           ));
-          showToast('Customer updated (demo mode)');
+          toast.success('Customer updated (demo mode)');
         } else {
           const newCustomer = { id: Date.now(), ...formData, status: formData.status || 'active' };
           setCustomers(prev => [newCustomer, ...prev]);
-          showToast('Customer added (demo mode)');
+          toast.success('Customer added (demo mode)');
         }
       } else {
         // Real API mode
         if (isEdit) {
           await customerAPI.update(editCustomer.id, formData);
-          showToast('Customer updated successfully');
+          toast.success('Customer updated successfully!');
         } else {
           await customerAPI.create(formData);
-          showToast('Customer created successfully');
+          toast.success('Customer created successfully!');
         }
         await loadCustomers();
       }
@@ -274,7 +272,7 @@ export default function CustomersPage() {
       setEditCustomer(null);
     } catch (err) {
       const msg = err.response?.data?.message || 'Something went wrong. Please try again.';
-      showToast(msg, 'error');
+      toast.error(msg, 'Error');
     } finally {
       setSaving(false);
     }
@@ -286,23 +284,25 @@ export default function CustomersPage() {
     try {
       if (isDemoMode) {
         setCustomers(prev => prev.filter(c => c.id !== deleteCustomer.id));
-        showToast('Customer deleted (demo mode)');
+        toast.success('Customer deleted (demo mode)');
       } else {
         await customerAPI.delete(deleteCustomer.id);
-        showToast('Customer deleted');
+        toast.success('Customer deleted successfully.');
         await loadCustomers();
       }
       setDeleteCustomer(null);
     } catch (err) {
-      showToast('Failed to delete customer', 'error');
+      toast.error('Failed to delete customer', 'Delete Failed');
     } finally {
       setSaving(false);
     }
   };
 
-const handleView = (customer) => {
-  navigate(`/analytics?customerId=${customer.id}`);
-};
+  const handleView = (customer) => {
+    // Navigate to analytics page for this customer
+    // For now show a toast — analytics page will be Module 5
+    toast.info(`Analytics for ${customer.name}`);
+  };
 
   // ── Computed stats ───────────────────────────────────────────────────────────
   const stats = {
@@ -539,44 +539,6 @@ const handleView = (customer) => {
           saving={saving}
         />
       )}
-
-      {/* ── Toast notification ── */}
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: 28, right: 28, zIndex: 9999,
-          background: toast.type === 'error' ? '#b33a1c'
-                    : toast.type === 'info'  ? 'var(--wv-blue)'
-                    : '#1a7a3c',
-          color: '#fff',
-          padding: '12px 20px', borderRadius: 10,
-          fontSize: 13.5, fontWeight: 500,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-          display: 'flex', alignItems: 'center', gap: 10,
-          animation: 'slideUp 0.25s ease',
-          maxWidth: 360,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            {toast.type === 'error'
-              ? <><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></>
-              : <><polyline points="20 6 9 17 4 12"/></>
-            }
-          </svg>
-          {toast.message}
-        </div>
-      )}
-
-      {/* Keyframe styles for shimmer + toast slide */}
-      <style>{`
-        @keyframes shimmer {
-          0%   { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-
     </ProtectedRoute>
   );
 }
