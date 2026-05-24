@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { customerAPI, analyticsAPI, reportAPI } from '../services/api';
 import { useToast } from '../components/ToastContext';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const COMPARISON_TYPES = [
   { id: 'estimated_vs_actual',   label: 'Estimated vs Actual' },
@@ -276,6 +276,39 @@ function CleaningPanel({ customerId, showToast }) {
             <StatCard label="Improvement" value={`${result.improvementPct}%`} color="#54A877" />
             <StatCard label="Total Gain" value={`${result.totalKwhGain} kWh`} />
           </div>
+
+          {/* ── Before vs After Bar Chart ── */}
+          <div style={{ marginTop: 24 }}>
+            <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--wv-dark)', marginBottom: 12 }}>
+              Production: Before vs After Cleaning
+            </h4>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart
+                data={[
+                  { period: 'Before Cleaning', avgKwh: result.preAvgKwh,  fill: '#f59e0b' },
+                  { period: 'After Cleaning',  avgKwh: result.postAvgKwh, fill: '#54A877' },
+                ]}
+                margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e8edf3" />
+                <XAxis dataKey="period" tick={{ fontSize: 13, fontWeight: 600 }} />
+                <YAxis tick={{ fontSize: 11 }} unit=" kWh" />
+                <Tooltip formatter={(v) => [`${v} kWh/day`, 'Avg Production']} />
+                <Bar dataKey="avgKwh" name="Avg kWh/day" radius={[6, 6, 0, 0]}>
+                  {[
+                    { period: 'Before Cleaning', avgKwh: result.preAvgKwh },
+                    { period: 'After Cleaning',  avgKwh: result.postAvgKwh },
+                  ].map((entry, index) => (
+                    <Cell key={index} fill={index === 0 ? '#f59e0b' : '#54A877'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <p style={{ fontSize: 12, color: 'var(--wv-gray)', textAlign: 'center', marginTop: 4 }}>
+              Average daily production {result.windowDays || 14} days before vs {result.windowDays || 14} days after cleaning
+            </p>
+          </div>
+
           <div style={{ marginTop: 20 }}>
             <h4 style={{ fontSize: 14, color: 'var(--wv-dark)' }}>Customer Letter</h4>
             <pre style={{ whiteSpace: 'pre-wrap', background: '#f8fafc', padding: 14, borderRadius: 8, fontSize: 12, fontFamily: 'inherit', color: 'var(--wv-dark)' }}>{result.customerLetter}</pre>
