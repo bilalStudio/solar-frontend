@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import CustomerModal from '../components/CustomerModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
@@ -180,9 +181,12 @@ function EmptyState({ hasFilters, onAdd }) {
 
 // ─── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function CustomersPage() {
+  const navigate = useNavigate();
   const toast = useToast();
   const [customers, setCustomers]         = useState([]);
   const [filtered, setFiltered]           = useState([]);
+  const [currentPage, setCurrentPage]       = useState(1);
+  const PAGE_SIZE = 10;
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState('');
   const [searchQuery, setSearchQuery]     = useState('');
@@ -191,7 +195,6 @@ export default function CustomersPage() {
   const [editCustomer, setEditCustomer]   = useState(null);
   const [deleteCustomer, setDeleteCustomer] = useState(null);
   const [saving, setSaving]               = useState(false);
-
   const [isDemoMode, setIsDemoMode]       = useState(false);
 
   // ── Load customers from API ──────────────────────────────────────────────────
@@ -237,9 +240,8 @@ export default function CustomersPage() {
     }
 
     setFiltered(result);
+    setCurrentPage(1);
   }, [customers, searchQuery, activeTab]);
-
-  // ── Toast helper ─────────────────────────────────────────────────────────────
 
   // ── CRUD handlers ─────────────────────────────────────────────────────────────
   const handleSave = async (formData, isEdit) => {
@@ -299,9 +301,7 @@ export default function CustomersPage() {
   };
 
   const handleView = (customer) => {
-    // Navigate to analytics page for this customer
-    // For now show a toast — analytics page will be Module 5
-    toast.info(`Analytics for ${customer.name}`);
+    navigate(`/analytics?customerId=${customer.id}`);
   };
 
   // ── Computed stats ───────────────────────────────────────────────────────────
@@ -320,6 +320,18 @@ export default function CustomersPage() {
   ];
 
   const hasFilters = searchQuery.trim() !== '' || activeTab !== 'all';
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const pgBtn = (disabled, active = false) => ({
+    minWidth: 32, height: 32, padding: '0 8px',
+    border: `1px solid ${active ? 'var(--wv-primary)' : '#e2e8f0'}`,
+    background: active ? 'var(--wv-primary)' : '#fff',
+    color: active ? '#fff' : 'var(--wv-dark)',
+    borderRadius: 6, fontSize: 12, cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.4 : 1, fontWeight: active ? 600 : 400,
+  });
 
   return (
     <ProtectedRoute
@@ -482,7 +494,7 @@ export default function CustomersPage() {
               ) : filtered.length === 0 ? (
                 <EmptyState hasFilters={hasFilters} onAdd={() => setShowAddModal(true)} />
               ) : (
-                filtered.map(customer => (
+                paginated.map(customer => (
                   <CustomerRow
                     key={customer.id}
                     customer={customer}
@@ -496,27 +508,29 @@ export default function CustomersPage() {
           </table>
         </div>
 
-        {/* Footer */}
+        {/* Footer with pagination */}
         {!loading && filtered.length > 0 && (
-          <div style={{
-            padding: '12px 22px',
-            borderTop: '1px solid #f0f3f8',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
+          <div style={{ padding: '12px 22px', borderTop: '1px solid #f0f3f8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <span style={{ fontSize: 12, color: 'var(--wv-gray)' }}>
-              Showing <strong>{filtered.length}</strong> of <strong>{customers.length}</strong> customers
+              Showing <strong>{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)}</strong> of <strong>{filtered.length}</strong> customers
             </span>
-            {hasFilters && (
-              <button
-                onClick={() => { setSearchQuery(''); setActiveTab('all'); }}
-                style={{
-                  fontSize: 12, color: 'var(--wv-primary)', background: 'none',
-                  border: 'none', cursor: 'pointer', textDecoration: 'underline',
-                }}
-              >
-                Clear filters
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} style={pgBtn(currentPage === 1)}>«</button>
+              <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} style={pgBtn(currentPage === 1)}>‹</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                .reduce((acc, p, i, arr) => {
+                  if (i > 0 && p - arr[i-1] > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, i) => p === '...'
+                  ? <span key={`e${i}`} style={{ padding: '0 4px', color: '#94a3b8', fontSize: 12 }}>…</span>
+                  : <button key={p} onClick={() => setCurrentPage(p)} style={pgBtn(false, currentPage === p)}>{p}</button>
+                )}
+              <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} style={pgBtn(currentPage === totalPages)}>›</button>
+              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} style={pgBtn(currentPage === totalPages)}>»</button>
+            </div>
           </div>
         )}
       </div>
@@ -539,6 +553,42 @@ export default function CustomersPage() {
           saving={saving}
         />
       )}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 28, right: 28, zIndex: 9999,
+          background: toast.type === 'error' ? '#b33a1c'
+                    : toast.type === 'info'  ? 'var(--wv-blue)'
+                    : '#1a7a3c',
+          color: '#fff',
+          padding: '12px 20px', borderRadius: 10,
+          fontSize: 13.5, fontWeight: 500,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          display: 'flex', alignItems: 'center', gap: 10,
+          animation: 'slideUp 0.25s ease',
+          maxWidth: 360,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {toast.type === 'error'
+              ? <><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></>
+              : <><polyline points="20 6 9 17 4 12"/></>
+            }
+          </svg>
+          {toast.message}
+        </div>
+      )}
+
+      {/* Keyframe styles for shimmer + toast slide */}
+      <style>{`
+        @keyframes shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
     </ProtectedRoute>
   );
 }

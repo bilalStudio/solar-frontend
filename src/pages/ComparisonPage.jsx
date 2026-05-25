@@ -102,7 +102,7 @@ function EstimatedVsActualPanel({ customerId }) {
           <StatCard label="Total Estimated" value={`${roi.totalEstimatedKwh} kWh`} color="#345EA6" />
           <StatCard label="Variance" value={`${roi.totalVarianceKwh} kWh`} color="#7c3aed" />
           <StatCard label="Performance" value={`${roi.performancePct}%`} color="#54A877" />
-          <StatCard label="Actual Savings" value={`PKR ${roi.actualSavingsPKR}`} color="#54A877" />
+          <StatCard label="Actual Savings" value={`USD ${roi.actualSavingsPKR}`} color="#54A877" />
         </div>
       )}
       <div className="kpi-card" style={{ padding: 24, marginTop: 20 }}>
@@ -388,7 +388,7 @@ function LossPanel({ customerId, showToast }) {
               <input type="date" className="wv-input" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
             </div>
             <div>
-              <label className="wv-label">Electricity rate (PKR/kWh)</label>
+              <label className="wv-label">Electricity rate (USD/kWh)</label>
               <input type="number" step="0.1" className="wv-input" value={form.electricityRate} onChange={(e) => setForm({ ...form, electricityRate: e.target.value })} />
             </div>
           </div>
@@ -404,7 +404,7 @@ function LossPanel({ customerId, showToast }) {
             <StatCard label="Estimated Production" value={`${result.estimatedProductionKwh} kWh`} />
             <StatCard label="Actual Production" value={`${result.actualProductionKwh} kWh`} />
             <StatCard label="kWh Loss" value={`${result.kwhLoss} kWh`} color="#dc2626" />
-            <StatCard label="Cost Impact" value={`PKR ${result.estimatedCostImpactPKR}`} color="#dc2626" />
+            <StatCard label="Cost Impact" value={`USD ${result.estimatedCostImpactPKR}`} color="#dc2626" />
             <StatCard label="Performance" value={`${result.performancePct}%`} />
           </div>
           <div style={{ marginTop: 20 }}>
