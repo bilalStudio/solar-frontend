@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { fieldDocAPI } from "../../services/fieldApi";
-import { useFieldAuth } from "../../context/FieldAuthContext";
-import { useToast } from "../../components/ToastContext";
-import { customerAPI } from "../../services/api";
+import { fieldDocAPI } from '../../services/fieldApi';
+import { useFieldAuth } from '../../context/FieldAuthContext';
+import { useToast } from '../../components/ToastContext';
+import { customerAPI } from '../../services/api';
 
 // Default field templates per document type
 const FIELD_TEMPLATES = {
@@ -197,6 +197,7 @@ export default function FieldDocumentFormPage() {
 
   const handleSendEmail = async () => {
     if (!emailForm.toEmail) { toast.warning('Please enter recipient email.'); return; }
+
     try {
       await fieldDocAPI.emailDocument(id, emailForm);
       toast.success(`Document emailed to ${emailForm.toEmail}!`, 'Email Sent');
@@ -404,7 +405,14 @@ export default function FieldDocumentFormPage() {
           background: '#fff', borderTop: '1px solid #e2e8f0',
           padding: '12px 16px', display: 'flex', gap: 10, justifyContent: 'center',
         }}>
-          <button onClick={() => setShowEmail(true)}
+          <button onClick={() => {
+              setEmailForm({
+                toEmail: emailForm.toEmail,
+                subject: doc?.docTypeLabel || 'Field Document',
+                body: 'Please find attached your document from WattVue.',
+              });
+              setShowEmail(true);
+            }}
             style={{ flex: 1, maxWidth: 200, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
             ✉ Email
           </button>
@@ -444,13 +452,13 @@ export default function FieldDocumentFormPage() {
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Subject</label>
-              <input type="text" value={emailForm.subject || (doc?.docTypeLabel || '')}
+              <input type="text" value={emailForm.subject}
                 onChange={e => setEmailForm({ ...emailForm, subject: e.target.value })}
                 style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Message</label>
-              <textarea rows={3} value={emailForm.body || 'Please find attached your document from WattVue.'}
+              <textarea rows={3} value={emailForm.body}
                 onChange={e => setEmailForm({ ...emailForm, body: e.target.value })}
                 style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', fontFamily: 'inherit' }} />
             </div>
