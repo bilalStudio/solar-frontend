@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { fieldDocAPI } from '../services/fieldApi';
-import { useFieldAuth } from '../context/FieldAuthContext';
-import { useToast } from '../components/ToastContext';
-import { customerAPI } from '../services/api';
+import { fieldDocAPI } from "../../services/fieldApi";
+import { useFieldAuth } from "../../context/FieldAuthContext";
+import { useToast } from "../../components/ToastContext";
+import { customerAPI } from "../../services/api";
 
 // Default field templates per document type
 const FIELD_TEMPLATES = {
